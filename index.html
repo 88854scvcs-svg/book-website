@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Art of Digital Creation - Online Reader</title>
+    <style>
+        :root {
+            /* Light Theme (Default) */
+            --bg-color: #fdfbf7;
+            --surface-color: #ffffff;
+            --text-color: #2c2a29;
+            --text-muted: #6b6560;
+            --border-color: #e8e2d9;
+            --accent-color: #8c6d46;
+            --accent-hover: #6e5434;
+            --sidebar-width: 300px;
+            --font-family: 'Georgia', serif;
+            --font-size: 18px;
+            --line-height: 1.8;
+            --content-max-width: 720px;
+        }
+
+        [data-theme="sepia"] {
+            --bg-color: #f4ecd8;
+            --surface-color: #ebdcb9;
+            --text-color: #5b4636;
+            --text-muted: #7c6855;
+            --border-color: #d8c8a8;
+            --accent-color: #8c531d;
+            --accent-hover: #6a3d13;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --surface-color: #242424;
+            --text-color: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --accent-color: #d4a373;
+            --accent-hover: #faedcd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Reading Progress Bar */
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background-color: var(--accent-color);
+            width: 0%;
+            z-index: 1000;
+            transition: width 0.1s;
+        }
+
+        /* Sidebar / Table of Contents */
+        aside {
+            width: var(--sidebar-width);
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        aside.open {
+            transform: translateX(0);
+        }
+
+        .toc-header {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toc-list {
+            list-style: none;
+        }
+
+        .toc-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .toc-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            display: block;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .toc-link:hover, .toc-link.active {
+            background-color: var(--border-color);
+            color: var(--text-color);
+            font-weight: bold;
+        }
+
+        /* Main Content Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 90;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Top Controls Navbar */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 80;
+        }
+
+        .nav-buttons, .settings-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        button {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* Main Reader Body */
+        main {
+            flex: 1;
+            max-width: var(--content-max-width);
+            margin: 80px auto 60px auto;
+            padding: 0 1.5rem;
+        }
+
+        .chapter {
+            margin-bottom: 4rem;
+        }
+
+        h1.book-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .author-name {
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 3rem;
+        }
+
+        h2.chapter-title {
+            font-size: 1.8rem;
+            margin-top: 2rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            text-align: justify;
+        }
+
+        p::first-letter {
+            font-size: 1.2em;
+        }
+
+        .code-block {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            position: relative;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            background-color: var(--bg-color);
+        }
+
+        /* Chapter Footer Navigation */
+        .chapter-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            :root {
+                --font-size: 16px;
+            }
+            main {
+                padding: 0 1rem;
+            }
+            .nav-text {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Scroll Progress Bar -->
+    <div id="progress-bar"></div>
+
+    <!-- Overlay for Sidebar -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Table of Contents Sidebar -->
+    <aside id="sidebar">
+        <div class="toc-header">
+            <span>Table of Contents</span>
+            <button onclick="toggleSidebar()">&times;</button>
+        </div>
+        <ul class="toc-list">
+            <li class="toc-item"><a href="#title-page" class="toc-link active" onclick="toggleSidebar()">Title Page</a></li>
+            <li class="toc-item"><a href="#chapter-1" class="toc-link" onclick="toggleSidebar()">Chapter 1: The Beginning</a></li>
+            <li class="toc-item"><a href="#chapter-2" class="toc-link" onclick="toggleSidebar()">Chapter 2: Code and Craft</a></li>
+            <li class="toc-item"><a href="#chapter-3" class="toc-link" onclick="toggleSidebar()">Chapter 3: The Digital Horizon</a></li>
+        </ul>
+    </aside>
+
+    <!-- Top Navigation Header -->
+    <header>
+        <div class="nav-buttons">
+            <button onclick="toggleSidebar()">☰ <span class="nav-text">Contents</span></button>
+        </div>
+        <div class="settings-buttons">
+            <button onclick="changeFontSize(-1)">A-</button>
+            <button onclick="changeFontSize(1)">A+</button>
+            <button onclick="setTheme('light')">☀️ Light</button>
+            <button onclick="setTheme('sepia')">📜 Sepia</button>
+            <button onclick="setTheme('dark')">🌙 Dark</button>
+        </div>
+    </header>
+
+    <!-- Main Book Content -->
+    <main id="book-content">
+
+        <!-- Title Page Section -->
+        <section id="title-page" class="chapter">
+            <h1 class="book-title">The Art of Digital Creation</h1>
+            <div class="author-name">By Jane Doe</div>
+            <p style="text-align: center;">A modern guide to understanding design, software architecture, and webcrafting.</p>
+        </section>
+
+        <!-- Chapter 1 -->
+        <section id="chapter-1" class="chapter">
+            <h2 class="chapter-title">Chapter 1: The Beginning</h2>
+            <p>Every journey in web creation starts with a single line of structured code. For decades, written books were printed on paper, distributed globally through logistics networks, and bound with physical materials. Today, the browser serves as a universal canvas for both text and logic.</p>
+            <p>Reading on the web introduces interactive experiences: changing visual contrast on demand, resizing typography for readability, dynamic bookmarking, and instant navigation between chapters.</p>
+        </section>
+
+        <!-- Chapter 2 -->
+        <section id="chapter-2" class="chapter">
+            <h2 class="chapter-title">Chapter 2: Code and Craft</h2>
+            <p>Integrating code snippets inside web-based literature allows technical books to directly share runnable examples with the reader. Below is a simple JavaScript example representing document scrolling tracking:</p>
+
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+                <pre><code>function updateProgress() {
+  const scroll = document.documentElement.scrollTop;
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const progress = (scroll / height) * 100;
+  document.getElementById('progress-bar').style.width = progress + '%';
+}</code></pre>
+            </div>
+
+            <p>By blending styled text layouts with code blocks, digital books serve both educational and practical purposes in a unified view.</p>
+        </section>
+
+        <!-- Chapter 3 -->
+        <section id="chapter-3" class="chapter">
+            <h2 class="chapter-title">Chapter 3: The Digital Horizon</h2>
+            <p>As web engines become faster and screen resolutions reach print quality, web books provide an efficient alternative to traditional document formats. They require no plugins, load fast, and are accessible from any connected device.</p>
+            <p>The future of reading combines classic typography with modern web accessibility standards, giving readers full control over their reading environment.</p>
+
+            <div class="chapter-nav">
+                <button onclick="scrollToChapter('chapter-2')">&larr; Previous Chapter</button>
+                <button onclick="scrollToChapter('title-page')">Back to Top &uarr;</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        // Change Font Size
+        let currentFontSize = 18;
+        function changeFontSize(delta) {
+            currentFontSize = Math.min(Math.max(14, currentFontSize + delta), 26);
+            document.documentElement.style.setProperty('--font-size', `${currentFontSize}px`);
+        }
+
+        // Set Reading Theme
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+
+        // Reading Progress Indicator
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress-bar').style.width = scrolled + '%';
+        });
+
+        // Copy Code Functionality
+        function copyCode(button) {
+            const codeBlock = button.parentElement.querySelector('code').innerText;
+            navigator.clipboard.writeText(codeBlock).then(() => {
+                const originalText = button.innerText;
+                button.innerText = 'Copied!';
+                setTimeout(() => {
+                    button.innerText = originalText;
+                }, 2000);
+            });
+        }
+
+        // Smooth Scroll to Chapter
+        function scrollToChapter(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    </script>
+</body>
+</html>
